@@ -1,6 +1,8 @@
 # Script pour analyser rapidement le contenu d'un dump Volatility 3 au format csv
 # Permet d'analyser rapidement le resultat des modules PsCan et PsList de Volatility3
+# -r csv pour obtenir le format csv
 
+# Choix : on ne peut changer que le format du render. Si on veut sauvegarder dans un fichier on utilise la redirection avec ">"
 # Usage : python3 main.py <FILE> <Options>
 # Default config can be editted from config.ini
 
@@ -9,42 +11,73 @@ import csv
 import configparser
 import argparse
 from tabulate import tabulate
+import time
 
 def read_config(config_fp) :
     config = configparser.ConfigParser()
     config.read(config_fp)
-    return config
+    
+    return {
+        "parameters": config["argparse"]["parameters"].split(",") if "parameters" in config["argparse"] else [],
+        "tables_formats": config["argparse"]["tables_formats"].split(",") if "tables_formats" in config["argparse"] else [],
+        "output_formats": config["argparse"]["output_formats"].split(",") if "output_formats" in config["argparse"] else [],
+        "d_format": config["argparse"].get("d_format", "tab"),
+        "d_tablefmt": config["argparse"].get("d_tablefmt", "simple"),
+        "d_count": config["argparse"].getboolean("d_count")
+    }
+
+def order(df, order, inv_order) :
+    if order:
+        df.sort_values(by=order, ascending=not inv_order, inplace=True)
+
+def filter(df, filter_str):
+    if filter_str:
+        filter_str = filter_str.lower()
+        if " in " in filter_str:
+            value, column = filter_str.split(" in ")
+            column = column.strip()
+            value = value.strip("'\"")
+            df.drop(df[~df[column].str.contains(value, case=False, na=False)].index, inplace=True)
+        else:
+            df.query(filter_str, inplace=True)
+            
+def render(a, format, no_space, headers, tblfmt, no_index):
+
+    formatters = {
+        "csv": lambda: a.to_csv(index=not no_index),
+        "json": lambda: a.to_json(index=not no_index),
+        "tab": lambda: tabulate(a, headers=headers, tablefmt=tblfmt)
+    }
+
+    output = formatters.get(format, lambda: "Invalid format")()
+
+    if format == "tab" and not no_space:
+        output = f"\n{output}\n"
+
+    print("{}{}{}".format('\n' if not no_space else '', output, '\n' if not no_space else ''))
 
 def parse_arguments(config) :
-    parameters = config["parameters"].split(",")
-    tables_formats = config["tables_formats"].split(",")
-    output_formats = config["output_formats"].split(",") 
-    d_format  = config["d_format"]
-    d_tablefmt = config["d_tablefmt"]
-    d_count = config.getboolean("d_count")
-    parser = argparse.ArgumentParser(description="Quick script to analyse volatility pslist output.")
-    parser.add_argument("file",         type=str, help="File path of the output of pslist with volatility.")
-    parser.add_argument("--parameters", choices=parameters, default=parameters , nargs='*', help="Parameter to extract")
-    parser.add_argument("--filter",     type=str, help="Filter.")
-    parser.add_argument("--order",      type=str, help="order result.")
-    parser.add_argument("--format",     choices=output_formats, default=d_format, help="Filter.")
-    parser.add_argument("--tblfmt",     choices=tables_formats, default=d_tablefmt, help="Format de la table.")
-    parser.add_argument("--inv_order",  action='store_true', help="Inverse order of ordering.")
-    parser.add_argument("--no_space",   action='store_true', help="Remove spaces at the beginning and at the end of the print.")
-    parser.add_argument("--no_count",   action='store_true', default=not d_count, help="Format de la table.")
-    args = parser.parse_args()
-    return args
+    parser = argparse.ArgumentParser(description="Quick script to summarize Volatility3 PsList and PsScan output.")
+    parser.add_argument("file",         type=str, help="Path to the input CSV file containing the output of PsList or PsScan from Volatility3.")
+    parser.add_argument("--parameters", choices=config["parameters"], default=config["parameters"] , nargs='*', help="List of parameters to extract from the CSV file. If not provided, all available parameters will be used.")
+    parser.add_argument("--filter",     type=str, help="A string filter to apply on the data (e.g., 'PPID > 100'). The filter syntax follows pandas' query format. If no filter is provided, all data will be processed.")
+    parser.add_argument("-o", "--order",      type=str, help="Specify a column name to order the results by. If not provided, results are shown in the order they appear in the input.")
+    parser.add_argument("-r", "--render",      choices=config["output_formats"], default=config["d_format"], help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
+    parser.add_argument("--tblfmt",     choices=config["tables_formats"], default=config["d_tablefmt"], help="Specify the table format for output when rendering as tabular data. Default format is %(default)s.")
+    parser.add_argument("--inv_order",  action='store_true', help="If set, reverses the order of the results (i.e., descending order). By default, the order is ascending.")
+    parser.add_argument("--no_space",   action='store_true', help="If set, removes leading and trailing spaces from the printed output.")
+    parser.add_argument("--no_index",   action='store_true', help="If set, omits the index column in the output when rendering tables.")
+    parser.add_argument("--no_count",   action='store_true', default=not config["d_count"], help="If set, hides the counting feature in the output. Default behavior is to include the count.")
+    return parser.parse_args()
 
-def analyse(config, args) :
-    display_name_mapping = {"name":"Name", "time":"Time", "ppid":"PPID", "pid":"PID", "subp":"Subprocesses"}
+def parse_data(file) : 
     data = {'name': [], 'time': [], 'ppid': [], 'pid': [], 'subp': []}
-    i = 0
     
-    with open(args.file, 'r') as csvfile:
+    with open(file, 'r') as csvfile:
         reader = csv.DictReader(csvfile) 
-        processes_raw = list(reader) 
-        
-    for process in processes_raw :
+        processes = list(reader) 
+
+    for process in processes :
         process_name = process['ImageFileName']
         if process_name not in data["name"] :
             data["name"].append(process_name)
@@ -52,61 +85,54 @@ def analyse(config, args) :
             data["ppid"].append(int(process['PPID']))
             data["pid"].append(int(process['PID']))
             data["subp"].append(0)
-            i += 1
         else : 
             j = data['name'].index(process_name)
             data["subp"][j] += 1
+            
+    return data
+
+def parse_data(file) : 
+    data = {'name': [], 'time': [], 'ppid': [], 'pid': [], 'subp': []}
     
+    with open(file, 'r') as csvfile:
+        reader = csv.DictReader(csvfile) 
+        processes = list(reader) 
+
+    for process in processes :
+        process_name = process['ImageFileName']
+        if process_name not in data["name"] :
+            data["name"].append(process_name)
+            data["time"].append(process['CreateTime'])
+            data["ppid"].append(int(process['PPID']))
+            data["pid"].append(int(process['PID']))
+            data["subp"].append(0)
+        else : 
+            j = data['name'].index(process_name)
+            data["subp"][j] += 1
+            
+    return data
+    
+def analyse(config, args) :
+    display_name_mapping = {"name":"Name", "time":"Time", "ppid":"PPID", "pid":"PID", "subp":"Subprocesses"}
+    
+    data = parse_data(args.file)
     df = pd.DataFrame(data) 
     total = len(df)
-    
-    # Filter
-    if args.filter : 
-        filter = args.filter.lower()
-        if " in " in filter:
-            value, column = filter.split(" in ")
-            column = column.strip()
-            value = value.strip("'\"")
-            df = df[df[column].str.contains(value, case=False, na=False)]
-        else : 
-            df = df.query(filter)
+    filter(df, args.filter)
+    order(df, args.order, args.inv_order)
     count = len(df)
-    
-    # Order
-    ascending = not args.inv_order
-    if args.order : 
-        df = df.sort_values(by=args.order, ascending=ascending)
     
     a = df[args.parameters]
     headers = [display_name_mapping[x] for x in a.columns.tolist()]
+    render(a, args.render, args.no_space, headers, args.tblfmt, args.no_index)
     
-    # Format
-    if args.format == "list" :
-        pass
-        if type(a) is pd.Series :
-            print(a.to_list())
-        elif type(a) is pd.DataFrame : 
-            print(a.values.tolist())
-    elif args.format == "csv" : 
-        print(a.to_csv())
-    elif args.format == "ocsv" : 
-        pass
-    elif args.format == "json" : 
-        print(a.to_json())
-    elif args.format == "tab" : 
-        if args.no_space : 
-            print(tabulate(a, headers=headers, tablefmt=args.tblfmt))
-        else : 
-            print("\n" + tabulate(a, headers=headers, tablefmt=args.tblfmt) + "\n")
-            
-    # Count
     if not args.no_count : 
         print(f"\nCount: {count}" + f"\nTotal: {total}\n" )
 
 def main() :
     CONFIG_FP = "config.ini"
     config = read_config(CONFIG_FP)
-    args = parse_arguments(config["argparse"])
+    args = parse_arguments(config)
     analyse(config, args)
 
 if __name__ == "__main__" : 
