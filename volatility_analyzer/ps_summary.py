@@ -11,7 +11,6 @@ import csv
 import configparser
 import argparse
 from tabulate import tabulate
-import time
 
 def read_config(config_fp) :
     config = configparser.ConfigParser()
@@ -40,21 +39,24 @@ def filter(df, filter_str):
             df.drop(df[~df[column].str.contains(value, case=False, na=False)].index, inplace=True)
         else:
             df.query(filter_str, inplace=True)
-            
-def render(a, format, no_space, headers, tblfmt, no_index):
 
+def write_file(filename, output) :
+    with open(filename, 'w') as file :
+        file.write(output)
+
+def render(a, filename, format, no_space, headers, tblfmt, no_index, ):
     formatters = {
-        "csv": lambda: a.to_csv(index=not no_index),
-        "json": lambda: a.to_json(index=not no_index),
+        "txt": lambda: a.to_string(filename, index=not no_index),
+        "csv": lambda: a.to_csv(filename, index=not no_index),
+        "json": lambda: a.to_json(filename, index=not no_index),
         "tab": lambda: tabulate(a, headers=headers, tablefmt=tblfmt)
     }
 
-    output = formatters.get(format, lambda: "Invalid format")()
-
-    if format == "tab" and not no_space:
-        output = f"\n{output}\n"
-
-    print("{}{}{}".format('\n' if not no_space else '', output, '\n' if not no_space else ''))
+    output = "{}{} {}".format('\n' if not no_space else '', formatters.get(format, lambda: "Invalid format")(), '\n' if not no_space else '')
+    if filename and format == "tab":
+        write_file(filename, output)
+    if not filename:
+        print(output)
 
 def parse_arguments(config) :
     parser = argparse.ArgumentParser(description="Quick script to summarize Volatility3 PsList and PsScan output.")
@@ -64,6 +66,7 @@ def parse_arguments(config) :
     parser.add_argument("-o", "--order",      type=str, help="Specify a column name to order the results by. If not provided, results are shown in the order they appear in the input.")
     parser.add_argument("-r", "--render",      choices=config["output_formats"], default=config["d_format"], help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
     parser.add_argument("--tblfmt",     choices=config["tables_formats"], default=config["d_tablefmt"], help="Specify the table format for output when rendering as tabular data. Default format is %(default)s.")
+    parser.add_argument("-e", "--extract", type=str, default=None, help="extract result in a seperated file")
     parser.add_argument("--inv_order",  action='store_true', help="If set, reverses the order of the results (i.e., descending order). By default, the order is ascending.")
     parser.add_argument("--no_space",   action='store_true', help="If set, removes leading and trailing spaces from the printed output.")
     parser.add_argument("--no_index",   action='store_true', help="If set, omits the index column in the output when rendering tables.")
@@ -124,10 +127,10 @@ def analyse(config, args) :
     
     a = df[args.parameters]
     headers = [display_name_mapping[x] for x in a.columns.tolist()]
-    render(a, args.render, args.no_space, headers, args.tblfmt, args.no_index)
+    render(a, args.extract, args.render, args.no_space, headers, args.tblfmt, args.no_index)
     
     if not args.no_count : 
-        print(f"\nCount: {count}" + f"\nTotal: {total}\n" )
+        print(f"Count: {count}" + f"\nTotal: {total}\n" )
 
 def main() :
     CONFIG_FP = "config.ini"
