@@ -24,6 +24,21 @@ def read_config(config_fp) :
         "d_tablefmt": config["argparse"].get("d_tablefmt", "simple"),
         "d_count": config["argparse"].getboolean("d_count")
     }
+    
+def parse_arguments(config) :
+    parser = argparse.ArgumentParser(description="Quick script to summarize Volatility3 PsList and PsScan output.")
+    parser.add_argument("file",         type=str, help="Path to the input CSV file containing the output of PsList or PsScan from Volatility3.")
+    parser.add_argument("--parameters", choices=config["parameters"], default=config["parameters"] , nargs='*', help="List of parameters to extract from the CSV file. If not provided, all available parameters will be used.")
+    parser.add_argument("--filter",     type=str, help="A string filter to apply on the data (e.g., 'PPID > 100'). The filter syntax follows pandas' query format. If no filter is provided, all data will be processed.")
+    parser.add_argument("-o", "--order",      type=str, help="Specify a column name to order the results by. If not provided, results are shown in the order they appear in the input.")
+    parser.add_argument("-r", "--render",      choices=config["output_formats"], default=config["d_format"], help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
+    parser.add_argument("--tblfmt",     choices=config["tables_formats"], default=config["d_tablefmt"], help="Specify the table format for output when rendering as tabular data. Default format is %(default)s.")
+    parser.add_argument("-e", "--extract", type=str, default=None, help="extract result in a seperated file")
+    parser.add_argument("--inv_order",  action='store_true', help="If set, reverses the order of the results (i.e., descending order). By default, the order is ascending.")
+    parser.add_argument("--no_space",   action='store_true', help="If set, removes leading and trailing spaces from the printed output.")
+    parser.add_argument("--no_index",   action='store_true', help="If set, omits the index column in the output when rendering tables.")
+    parser.add_argument("--no_count",   action='store_true', default=not config["d_count"], help="If set, hides the counting feature in the output. Default behavior is to include the count.")
+    return parser.parse_args()
 
 def order(df, order, inv_order) :
     if order:
@@ -58,20 +73,7 @@ def render(a, filename, format, no_space, headers, tblfmt, no_index, ):
     if not filename:
         print(output)
 
-def parse_arguments(config) :
-    parser = argparse.ArgumentParser(description="Quick script to summarize Volatility3 PsList and PsScan output.")
-    parser.add_argument("file",         type=str, help="Path to the input CSV file containing the output of PsList or PsScan from Volatility3.")
-    parser.add_argument("--parameters", choices=config["parameters"], default=config["parameters"] , nargs='*', help="List of parameters to extract from the CSV file. If not provided, all available parameters will be used.")
-    parser.add_argument("--filter",     type=str, help="A string filter to apply on the data (e.g., 'PPID > 100'). The filter syntax follows pandas' query format. If no filter is provided, all data will be processed.")
-    parser.add_argument("-o", "--order",      type=str, help="Specify a column name to order the results by. If not provided, results are shown in the order they appear in the input.")
-    parser.add_argument("-r", "--render",      choices=config["output_formats"], default=config["d_format"], help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
-    parser.add_argument("--tblfmt",     choices=config["tables_formats"], default=config["d_tablefmt"], help="Specify the table format for output when rendering as tabular data. Default format is %(default)s.")
-    parser.add_argument("-e", "--extract", type=str, default=None, help="extract result in a seperated file")
-    parser.add_argument("--inv_order",  action='store_true', help="If set, reverses the order of the results (i.e., descending order). By default, the order is ascending.")
-    parser.add_argument("--no_space",   action='store_true', help="If set, removes leading and trailing spaces from the printed output.")
-    parser.add_argument("--no_index",   action='store_true', help="If set, omits the index column in the output when rendering tables.")
-    parser.add_argument("--no_count",   action='store_true', default=not config["d_count"], help="If set, hides the counting feature in the output. Default behavior is to include the count.")
-    return parser.parse_args()
+
 
 def parse_data(file) : 
     data = {'name': [], 'time': [], 'ppid': [], 'pid': [], 'subp': []}
