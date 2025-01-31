@@ -45,6 +45,7 @@ def parse_arguments(config) :
     parser.add_argument("--order",          type=str, choices=config["order_parameters"],  help="order result.")
     parser.add_argument("--tblfmt",         type=str, choices=config["tables_formats"], default=config["d_tablefmt"], help="Format de la table.")
     parser.add_argument("--inv_order",      action='store_true', help="Inverse order of ordering.")
+    parser.add_argument("--quiet",      action='store_true', help="Don't print output.")
     parser.add_argument("--remove_double",  action='store_true', default=config["d_remove_double"], help="remove double matches.")
     parser.add_argument("--cesar_shift",    type=int, default=None, nargs='*', help="shifts to perform.")
     parser.add_argument("--outfile",        type=str, default=None, help="output filte to save in.")
@@ -70,7 +71,7 @@ def write_file(filename, output) :
     with open(filename, 'w') as file :
         file.write(output)
 
-def render(a, filename, format, no_space, headers, tblfmt, no_index, ):
+def render(a, filename, format, no_space, headers, tblfmt, no_index, quiet):
     formatters = {
         "txt": lambda: a.to_string(filename, index= not no_index),
         "csv": lambda: a.to_csv(filename, index= not no_index),
@@ -81,7 +82,7 @@ def render(a, filename, format, no_space, headers, tblfmt, no_index, ):
     output = "{}{} {}".format('\n' if not no_space else '', formatters.get(format, lambda: "Invalid format")(), '\n' if not no_space else '')
     if filename and format == "tab":
         write_file(filename, output)
-    if not filename:
+    if not filename and not quiet:
         print(output)
 
 def add_keywords(user_keywords, keywords, source, encoding_func, options):
@@ -184,7 +185,7 @@ def visualise(keywords, results, args):
 
     df_results = pd.DataFrame(results)
     print(f"Total : {len(results['result'])}\n")
-    render(df_results[args.parameters], args.extract, args.render, args.no_space, df_results.columns.tolist(), args.tblfmt, args.no_index)
+    render(df_results[args.parameters], args.extract, args.render, args.no_space, df_results.columns.tolist(), args.tblfmt, args.no_index, args.quiet)
 
 def set_options(args) : 
     options = {}

@@ -3,6 +3,15 @@
 import re
 import base64
 import pandas as pd
+import argparse
+
+def parse_arguments() :
+    parser = argparse.ArgumentParser(description="Quick script to search for keywords in a text file.")
+    parser.add_argument("file", type=str, help="File path of the file for keyword search.")
+    parser.add_argument("prefix", type=str, help="Prefix in base64.")
+    args = parser.parse_args()
+    return args
+
 
 def find_base64_in_file(file_path, prefix):
     base64_pattern = re.compile(r'[A-Za-z0-9+/=]{4,}[^ \n]*')
@@ -40,8 +49,10 @@ def b64_decode(encoded_string):
         print(f"Error : {encoded_string} - {str(e)}")
         return None
 
-file_path = 'test.txt' 
-prefix = 'aXJpc2'  # Prefixe
+
+args = parse_arguments()
+file_path = args.file
+prefix = args.prefix
 matches = find_base64_in_file(file_path, prefix)
 m = set(matches)
 results = []
