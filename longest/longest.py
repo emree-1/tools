@@ -35,7 +35,7 @@ def visualise(results, total, summary) :
     df = pd.DataFrame(results, columns=["result"])
     
     if summary : 
-        print(f"Count : {len(df['result'])}")
+        print(f"\nCount : {len(df['result'])}")
         print(f"Removed : {total - len(df['result'])}")
         print(f"Total : {total}")
         print(df)

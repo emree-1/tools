@@ -135,7 +135,7 @@ def analyse(config, args) :
         print(f"Count: {count}" + f"\nTotal: {total}\n" )
 
 def main() :
-    CONFIG_FP = "config.ini"
+    CONFIG_FP = ".\config.ini"
     config = read_config(CONFIG_FP)
     args = parse_arguments(config)
     analyse(config, args)
