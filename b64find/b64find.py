@@ -8,18 +8,30 @@ from tabulate import tabulate
 import warnings
 
 def parse_arguments() :
-    parser = argparse.ArgumentParser(description="Quick script to search for keywords in a text file.")
-    parser.add_argument("file", type=str, help="File path of the file for keyword search.")
-    parser.add_argument("prefix", type=str, help="Prefix in base64.")
-    parser.add_argument("--encode", action='store_true', default=False, help="If defined, prefix will be encoded in base64.")
-    parser.add_argument("--decode", action='store_true', default=False, help="If defined, outputs will tried to be decoded .")
-    parser.add_argument("--ctf", action='store_true', default=False, help="If defined, will return values only ending with \"}\".")
-    parser.add_argument("-r", "--render", type=str, choices=["csv", "json", "txt", "tab"], default="csv", help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
-    parser.add_argument("-e", "--extract",  type=str, default=None, help="extract result in a seperated file")
-    parser.add_argument("--index",       action='store_true', default=False, help="If defined, add index to output.")
-    parser.add_argument("--no_space",       action='store_true', help="Remove spaces at the beginning and at the end of the print.")
+    parser = argparse.ArgumentParser(description="A tool to search for Base64-encoded values based on a given prefix.")
+    parser.add_argument("file", type=str, help="Path to the input file containing text to search for Base64 matches.")
+    parser.add_argument("prefix", type=str, help="Prefix to search for within the provided file.")
+    parser.add_argument("--no_encode", action='store_false', default=True, help="Disable automatic Base64 encoding of the prefix before searching.")
+    parser.add_argument("--decode", action='store_true', default=False, help="Attempt to decode all matching Base64 values found in the search results.")
+    parser.add_argument("--ctf", action='store_true', default=False, help="Filter results to only return values that end with '}', indicating a valid CTF flag.")
+    parser.add_argument("-r", "--render", type=str, choices=["csv", "json", "txt", "tab"], default="csv", help="Specify the output format. Available formats: %(choices)s. Default is %(default)s.")
+    parser.add_argument("-e", "--extract", type=str, default=None, help="Save the results to the specified output file.")
+    parser.add_argument("--index", action='store_true', default=False, help="Include an index column in the output (useful for CSV/JSON formats).")
+    parser.add_argument("--no_space", action='store_true', help="Remove leading and trailing spaces from the output, useful for cleaner result processing.")
+    parser.add_argument("-q","--quiet", action='store_true', default=False, help="Suppress the script's banner during execution.")
     args = parser.parse_args()
     return args
+
+def banner() :
+    banner = """ _       ____    ___   __  _             _ 
+| |     / ___|  /   | / _|(_)           | |
+| |__  / /___  / /| || |_  _  _ __    __| |
+| '_ \ | ___ \/ /_| ||  _|| || '_ \  / _` |
+| |_) || \_/ |\___  || |  | || | | || (_| |
+|_.__/ \_____/    |_/|_|  |_||_| |_| \__,_|
+"""
+    print(banner)
+
 
 def render_txt(results) :
     for x in results :
@@ -40,7 +52,9 @@ def render(a, filename, format, no_space, index, header=False):
     output = "{}{} {}".format('\n' if not no_space else '', formatters.get(format, lambda: "Invalid format")(), '\n' if not no_space else '')
     if filename and format == "tab":
         write_file(filename, output)
-    if not filename :
+    if filename : 
+        print(f"\nResults saved in \"{filename}\".\n")
+    else :
         print(output)
 
 def ctf_flags(results):
@@ -76,7 +90,10 @@ def find_base64_in_file(file_path, prefix):
 
 def main() :
     args = parse_arguments()
-    prefix = b64_encode(args.prefix) if args.encode else args.prefix
+    
+    if not args.quiet :
+        banner()
+    prefix = b64_encode(args.prefix) if args.no_encode else args.prefix
     results = set(find_base64_in_file(args.file, prefix))
     
     if args.decode :
@@ -87,6 +104,7 @@ def main() :
     df = pd.DataFrame(results)
     pd.set_option('display.max_colwidth', None)
 
+    print(" > Results : ")
     render(df, args.extract, args.render, args.no_space, args.index)
     
 if __name__ == "__main__" :

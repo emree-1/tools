@@ -1,23 +1,20 @@
-
-| Result                                 |
-|----------------------------------------|
-| irisctf{i_am((                         |
-| irisctf{i_am_an_id                     |
-| irisctf{i_am_an_idiot_with_bad_memor   |
-| irisctf{i_am_an_idiot_with_bad_me      |
-| irisctf{i_am_an_idiot_with_bad         |
-| irisctf{i_am_an                        |
-| irisctf{i_am_an_idiot_with_bad_memory} |
-| irisctf{i                              |
-| irisctf{i_b(                           |
-| irisctf{i_am_an_idiot_with_bad_memor@<z                                        |
-| irisctf{i_am                           |
-| irisctf{i_am_an_idiot_wi               |
-| irisctfr(((                            |
-| irisctf{i(((                           |
-| irisctf{i_aJ((                         |
-| irisct(                                |
-| irisctf{J                              |
-| irisct                                 |
-| irisctf{i_am_an_idiot                  |
-| irisctf{i_am_an_idiot_with_            | 
+irisctf{i_am_an_idiot_with_bad_me
+irisctf{i_am_an_idiot_with_
+irisctf{i_am_an
+irisctf{i_am_an_idiot_with_bad
+irisctf{i_am_an_idiot_wi
+irisctf{i_am_an_idiot_with_bad_memor
+irisctf{i_am
+irisct
+irisctf{i_am_an_id
+irisctf{i_am_an_idiot_with_bad_memory}
+irisctf{i_aJ((
+irisctf{i_b(
+irisctf{i_am_an_idiot_with_bad_memor@<z
+irisctfr(((
+irisctf{J
+irisctf{i
+irisctf{i_am((
+irisct(
+irisctf{i_am_an_idiot
+irisctf{i(((
