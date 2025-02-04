@@ -12,9 +12,8 @@ def banner() :
  / ,<  / _  |/ // /(_-</ __// _ `// _ \\
 /_/|_|/____//____//___/\\__/ \\_,_//_//_/
     """
-    print(f'\033[38;2;0;210;0m{banner}\033[0m')
-
-    # print(banner)
+    # print(f'\033[38;2;0;210;0m{banner}\033[0m')
+    print(banner)
 
 def parse_arguments() :
     parser = argparse.ArgumentParser(description="...")
