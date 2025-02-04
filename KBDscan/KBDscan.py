@@ -6,16 +6,20 @@ import tabulate
 
 
 def banner() :
-    print("""
+    banner = """
    __ __ ___   ___                     
   / //_// _ ) / _ \\ ___ ____ ___ _ ___ 
  / ,<  / _  |/ // /(_-</ __// _ `// _ \\
 /_/|_|/____//____//___/\\__/ \\_,_//_//_/
-    """)
+    """
+    print(f'\033[38;2;0;210;0m{banner}\033[0m')
+
+    # print(banner)
 
 def parse_arguments() :
     parser = argparse.ArgumentParser(description="...")
     parser.add_argument("file", type=str, help="path to pcap file.")
+    parser.add_argument("--not_empty", action='store_true', help="Allow devices that sent none empty reports.")
     parser.add_argument("-r", "--render", type=str, choices=["csv", "json", "txt", "tab"], default="csv", help="Specify the output format. Available formats: %(choices)s. Default is %(default)s.")
     parser.add_argument("-e", "--extract", type=str, default=None, help="Save the results to the specified output file.")
     parser.add_argument("--index", action='store_true', default=False, help="Include an index column in the output (useful for CSV/JSON formats).")
@@ -54,7 +58,7 @@ def get_endpoints(file):
     df[["packets", "tx_packets", "rx_packets"]] = df[["packets", "tx_packets", "rx_packets"]].astype(int)
     return df
 
-def check_if_any_keyboard(file, devices):
+def check_if_any_keyboard(file, devices, not_empty):
     keyboards = defaultdict(int)
     null_reports = set()
 
@@ -74,17 +78,18 @@ def check_if_any_keyboard(file, devices):
         if capdata and len(capdata) == 16 and capdata[2:4] == "00":
             keyboards[device_id] += 1  # Compter les paquets valides
 
-        # Vérifier la présence de rapports nuls (usb.capdata[0:8] == 00:00:00:00:00:00:00:00)
-        if capdata == "0000000000000000":
+        valid_keyboards = [
+            d for d in keyboards
+            if keyboards[d] == devices.get(d, [0, 0])[1] 
+        ]
+
+        if not not_empty and capdata == "0000000000000000" :
             null_reports.add(device_id)
-
-    # Filtrer les devices valides (ceux qui ont le bon nombre de paquets et des rapports nuls)
-    valid_keyboards = [
-        d for d in keyboards
-        if keyboards[d] == devices.get(d, [0, 0])[1] 
-        and d in null_reports
-    ]
-
+            valid_keyboards = [
+                d for d in valid_keyboards
+                if d in null_reports
+            ]
+    
     return {"result" : valid_keyboards}
 
 
@@ -96,7 +101,7 @@ def main() :
 
     endpoints = get_endpoints(args.file)
     T_endpoints = endpoints.set_index("address").T.reset_index(drop=True)
-    keyboards = check_if_any_keyboard(args.file, T_endpoints)
+    keyboards = check_if_any_keyboard(args.file, T_endpoints, args.not_empty)
     df = pd.DataFrame(keyboards)
 
     render(df, args.extract, args.render, args.no_space, args.index)
