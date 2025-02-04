@@ -23,19 +23,13 @@ def parse_arguments() :
     return args
 
 def banner() :
-    banner = """ _       ____    ___   __  _             _ 
+    print(""" _       ____    ___   __  _             _ 
 | |     / ___|  /   | / _|(_)           | |
 | |__  / /___  / /| || |_  _  _ __    __| |
 | '_ \ | ___ \/ /_| ||  _|| || '_ \  / _` |
 | |_) || \_/ |\___  || |  | || | | || (_| |
 |_.__/ \_____/    |_/|_|  |_||_| |_| \__,_|
-"""
-    print(banner)
-
-
-def render_txt(results) :
-    for x in results :
-        print(x)
+""")
 
 def write_file(filename, output) :
     with open(filename, 'w') as file :
