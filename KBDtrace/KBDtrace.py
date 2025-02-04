@@ -1,9 +1,22 @@
 
 # Original code is from  : https://github.com/TeamRocketIst/ctf-usb-keyboard-parser/blob/master/usbkeyboard.py
-# Just used pyshark to automate the extraction
+# Just used tshark with subprocess to automate extraction
 
-import pyshark
 import argparse
+import subprocess
+import pandas as pd
+
+def banner(quiet) :
+    if quiet : 
+        return
+    banner = """
+   __ _____  ___  __                  
+  / //_/ _ )/ _ \\/ /________ ________ 
+ / ,< / _  / // / __/ __/ _ `/ __/ -_)
+/_/|_/____/____/\\__/_/  \\_,_/\\__/\\__/                               
+"""
+    print(banner)
+
 
 KEY_CODES = {
     0x04:['a', 'A'],
@@ -64,35 +77,6 @@ KEY_CODES = {
     0x52:[u'↑',u'↑']
 }
 
-
-usb_keyboard_filter = "usb.capdata and usb.data_len==8 "
-
-usb_keyboard = True
-device_id  = "1.5.1"
-
-filter = ""
-if usb_keyboard :
-    filter += usb_keyboard_filter
-if device_id :
-    filter += f"and usb.addr=={device_id}"
-
-
-cap_fp = "/Users/emrehancil/Desktop/FORENSIC1/klogger.pcapng"
-cap = pyshark.FileCapture(input_file=cap_fp, display_filter=filter)
-
-# print(pkt.layers) # Afficher les layers capturés
-# print(pkt.data.field_names) # Afficher les attributs disponibles pour un layer
-# print(pkt.data.usb_capdata)
-
-def parse_data(cap) : 
-    capdatas = []
-
-    for pkt in cap:
-        if hasattr(pkt, 'data') and hasattr(pkt.data, 'usb_capdata'):
-            capdata = pkt.data.usb_capdata
-            capdatas.append(capdata)
-    return capdatas
-
 def read_use(capdatas):
     datas = [d.strip() for d in capdatas if d] 
     cursor_x = 0
@@ -105,9 +89,6 @@ def read_use(capdatas):
     for data in datas:
         shift = int(data.split(':')[0], 16) # 0x2 is left shift 0x20 is right shift
         key = int(data.split(':')[2], 16)
-
-        if key == 0x16 :
-            print()
 
         if skip_next:
             skip_next = False
@@ -153,18 +134,49 @@ def read_use(capdatas):
         lines[cursor_y] += output
     return '\n'.join(lines)
 
-capdatas = parse_data(cap)
+def parse_capdatas(file, devices) : 
+    results = {}
+    usb_keyboard_filter = "usb.capdata and usb.data_len==8"
 
-res = read_use(capdatas)
-
-print(res)
-
+    for device in devices : 
+        apply_filter = f"{usb_keyboard_filter} and usb.src == {device}"
+        capdatas = subprocess.run(["tshark", "-r", file, "-T", "fields", "-e", "usb.capdata", "-Y", apply_filter], capture_output=True, text=True)
+        capdatas = capdatas.stdout.splitlines()
+        capdatas = [":".join(s[i:i+2] for i in range(0, len(s), 2)) for s in capdatas]
+        results[device] = capdatas if capdatas else "No packets matching USB HID definition."
+    
+    return results
 
 def parse_arguments() :
-    pass
+    parser = argparse.ArgumentParser(description="...")
+    parser.add_argument("file", type=str, help="path to pcap file.")
+    parser.add_argument("-d", "--devices", type= str, nargs ="+", help="List of devices to extract keypresses")
+    parser.add_argument("-r", "--render", type=str, choices=["csv", "json", "txt", "tab"], default="csv", help="Specify the output format. Available formats: %(choices)s. Default is %(default)s.")
+    parser.add_argument("-e", "--extract", type=str, default=None, help="Save the results to the specified output file.")
+    parser.add_argument("--index", action='store_true', default=False, help="Include an index column in the output (useful for CSV/JSON formats).")
+    parser.add_argument("--no_space", action='store_true', help="Remove leading and trailing spaces from the output, useful for cleaner result processing.")
+    parser.add_argument("-q","--quiet", action='store_true', default=False, help="Suppress the script's banner during execution.")
+    args = parser.parse_args()
+    return args
 
 def main() :
-    pass
+    args = parse_arguments()
+    banner(args.quiet)
+    capdatas = parse_capdatas(args.file, args.devices)
+    results = {"id":[], "result":[]}
+    for device in args.devices : 
+        if type(capdatas[device]) == list : 
+            try : 
+                res = read_use(capdatas[device])
+            except : 
+                res = "Failed to parse data, probably not a keyboard"
+        else : 
+            res = capdatas[device]
+        results["id"].append(device)
+        results["result"].append(res)
+
+    df = pd.DataFrame(results)
+    print("\n\n", df["result"][0], "\n")
 
 if __name__ == "__main__" : 
     main()
