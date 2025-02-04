@@ -22,14 +22,17 @@ def parse_arguments() :
     args = parser.parse_args()
     return args
 
-def banner() :
-    print(""" _       ____    ___   __  _             _ 
-| |     / ___|  /   | / _|(_)           | |
-| |__  / /___  / /| || |_  _  _ __    __| |
-| '_ \ | ___ \/ /_| ||  _|| || '_ \  / _` |
-| |_) || \_/ |\___  || |  | || | | || (_| |
-|_.__/ \_____/    |_/|_|  |_||_| |_| \__,_|
-""")
+def banner(quiet) :
+    if quiet : 
+        return 
+    
+    banner = """
+   __   ____ ____ ____         __
+  / /  / __// / // _(_)__  ___/ /
+ / _ \\/ _ \\/_  _/ _/ / _ \\/ _  / 
+/_.__/\\___/ /_//_//_/_//_/\\_,_/  
+    """
+    print(banner)
 
 def write_file(filename, output) :
     with open(filename, 'w') as file :
@@ -84,9 +87,7 @@ def find_base64_in_file(file_path, prefix):
 
 def main() :
     args = parse_arguments()
-    
-    if not args.quiet :
-        banner()
+    banner(args.quiet)
     prefix = b64_encode(args.prefix) if args.no_encode else args.prefix
     results = set(find_base64_in_file(args.file, prefix))
     
