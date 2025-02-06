@@ -61,7 +61,7 @@ def parse_arguments(config) :
     parser.add_argument("--inv_order",      action='store_true', help="Inverse order of ordering.")
     parser.add_argument("--quiet",          action='store_true', help="Don't print output.")
     parser.add_argument("--qquiet",          action='store_true', help="Don't print output and banner.")
-    parser.add_argument("--remove_double",  action='store_true', default=config["d_remove_double"], help="remove double matches.")
+    parser.add_argument("--remove_duplicate",  action='store_true', help="remove double matches.")
     parser.add_argument("--cesar_shift",    type=int, default=None, nargs='*', help="shifts to perform.")
     parser.add_argument("--index",       action='store_true', help="Display/extract with index.")
     parser.add_argument("--time",           action='store_true', default=False, help="Display execution time.")
@@ -154,13 +154,13 @@ def parse_data(fp, keywords, options):
                     line_lower = line_stripped.lower()  # Convertir la ligne une seule fois
                     for i, keyword in enumerate(keywords_lower):
                         if keyword in line_lower:
-                            if options["remove_double"] and line_stripped not in seen_lines:
+                            if options["remove_duplicate"] and line_stripped not in seen_lines:
                                 seen_lines.add(line_stripped)
                                 results["line_num"].append(j)
                                 results["result"].append(line_stripped)
                                 results["keyword"].append(keywords["keyword"][i])
                                 keywords["count"][i] += 1
-                            elif not options["remove_double"]:
+                            elif not options["remove_duplicate"]:
                                 results["line_num"].append(j)
                                 results["result"].append(line_stripped)
                                 results["keyword"].append(keywords["keyword"][i])
@@ -215,7 +215,7 @@ def visualise(keywords, results, args):
 def set_options(args) : 
     options = {}
     options["cesar_shift"] = args.cesar_shift if args.cesar_shift else range(1,26)
-    options["remove_double"] = args.remove_double 
+    options["remove_duplicate"] = args.remove_duplicate 
     options["trim_padding"] = True
     options["verbose"] = args.verbose 
     return options
