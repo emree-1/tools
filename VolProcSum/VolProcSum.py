@@ -12,6 +12,19 @@ import configparser
 import argparse
 from tabulate import tabulate
 
+
+def banner(quiet) : 
+    if quiet : 
+        return
+    banner = """
+  _   __     _____               ____         
+ | | / /__  / / _ \\_______  ____/ __/_ ____ _ 
+ | |/ / _ \\/ / ___/ __/ _ \\/ __/\\ \\/ // /  ' \\
+ |___/\\___/_/_/  /_/  \\___/\\__/___/\\_,_/_/_/_/
+"""
+    print(banner)
+
+
 def read_config(config_fp) :
     config = configparser.ConfigParser()
     config.read(config_fp)
@@ -33,6 +46,7 @@ def parse_arguments(config) :
     parser.add_argument("-o", "--order",      type=str, help="Specify a column name to order the results by. If not provided, results are shown in the order they appear in the input.")
     parser.add_argument("-r", "--render",      choices=config["output_formats"], default=config["d_format"], help="Specify the format to render the output. Available formats: %(choices)s. Default format is %(default)s.")
     parser.add_argument("-e", "--extract", type=str, default=None, help="extract result in a seperated file")
+    parser.add_argument("--quiet",  action='store_true', help="Do not print banner whene executing.")
     parser.add_argument("--inv_order",  action='store_true', help="If set, reverses the order of the results (i.e., descending order). By default, the order is ascending.")
     parser.add_argument("--no_space",   action='store_true', help="If set, removes leading and trailing spaces from the printed output.")
     parser.add_argument("--no_index",   action='store_true', help="If set, omits the index column in the output when rendering tables.")
@@ -135,9 +149,10 @@ def analyse(config, args) :
         print(f"Count: {count}" + f"\nTotal: {total}\n" )
 
 def main() :
-    CONFIG_FP = ".\config.ini"
+    CONFIG_FP = "./config.ini"
     config = read_config(CONFIG_FP)
     args = parse_arguments(config)
+    banner(args.quiet)
     analyse(config, args)
 
 if __name__ == "__main__" : 
