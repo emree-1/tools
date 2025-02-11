@@ -1,3 +1,6 @@
+import ollama
+
+
 import re
 
 recursive_line = """.("{0}{2}{1}"-f 'Set','Variable','-') -Name ('iv') -Value ( ( VArIaBlE  ("{0}{1}"-f'Y8','F')  -ValuEo )::"U`Tf8".("{0}{2}{1}"-f 'Get','tes','By').Invoke((("{1}{0}" -f 'e',("{0}{1}" -f 'Md3','3'))+'F'+'a'+("{0}{2}{1}" -f '0','Z',("{0}{1}"-f 'wN','x2'))+'q'+("{3}{2}{1}{0}"-f'Y1',("{1}{2}{0}"-f'm','7oN','45'),("{1}{0}{2}" -f '6','LjK','X9t3G'),'5'))))"""
@@ -115,4 +118,16 @@ for line in lines :
     clean_line = clean_variables(clean_line)
     clean_line = concatenate_strings(clean_line)
     cleaned.append(clean_line)
-    print(clean_line)
+
+cleaned = "\n".join(cleaned)
+print(cleaned)
+    
+    
+# Trying to see if deepseek-r1 can further clean the script...
+prompt = f"""
+Here is an obfuscated Powershell, I need you to clean so that I can further analyse it. Return me only the cleaned script:
+
+{cleaned}
+"""
+response = ollama.chat(model="deepseek-r1", messages=[{"role": "user", "content": prompt}])
+print(response["message"]["content"])
