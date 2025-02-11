@@ -133,6 +133,9 @@ def cesar_gen(user_keywords, keywords, source, shifts) :
     for shift in shifts:
         add_keywords(user_keywords, keywords, f"cesar - {shift}", cesar_cipher, {"shift":shift})
 
+def sixteen_bits(user_keywords, keywords):
+    pass
+
 def parse_data(fp, keywords, options):
     results = {'line_num':[], 'keyword':[], 'result':[]}
     seen_lines = set()  # Utiliser un set pour vérifier les doublons rapidement
