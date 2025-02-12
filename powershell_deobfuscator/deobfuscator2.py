@@ -129,5 +129,5 @@ Here is an obfuscated Powershell, I need you to clean so that I can further anal
 
 {cleaned}
 """
-response = ollama.chat(model="deepseek-r1", messages=[{"role": "user", "content": prompt}])
+response = ollama.chat(model="dolphin-llama3", messages=[{"role": "user", "content": prompt}])
 print(response["message"]["content"])
