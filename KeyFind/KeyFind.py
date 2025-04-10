@@ -148,7 +148,7 @@ def parse_data(fp, keywords, options):
                 files.append(os.path.join(racine, fichier))
     else : 
         files.append(fp)
-        
+    
     for file in files : 
         try : 
             with open(file, 'r') as file:
