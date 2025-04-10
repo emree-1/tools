@@ -25,6 +25,7 @@ exit_status = {
 def parse_arguments() :
     parser = argparse.ArgumentParser(description="Collect and displays events related to downloads with Windos Installer from evtx file.")
     parser.add_argument("file", type=str, help="File path of the evtx file.")
+    parser.add_argument("--verbose",        action='store_true', help="verbose mode.")
     args = parser.parse_args()
     return args
 
@@ -50,7 +51,7 @@ def parse_evtx_list(evtx_events):
         tab["TimeCreated"].append(root.find('./e:System/e:TimeCreated', ns).attrib.get("SystemTime") if not None else None)
         tab["EventRecordID"].append(root.find('./e:System/e:EventRecordID', ns).text if not None else None)
         tab["EventID"].append(event_id)
-        tab["Provider"].append(root.find('./e:System/e:Provider', ns).text if not None else None)
+        tab["Provider"].append(root.find('./e:System/e:Provider', ns).attrib.get("Name") if not None else None)
         tab["Channel"].append(root.find('./e:System/e:Channel', ns).text if not None else None)
         tab["Computer"].append(root.find('./e:System/e:Computer', ns).text if not None else None)
         tab["Data"].append(clean_data(root.find('./e:EventData/e:Data', ns).text if not None else None, event_id))
@@ -68,12 +69,27 @@ def clean_data(data, event_id):
         return f"{x[0]} ({x[1]}) | {x[4]} | {language_mapping.get(x[2])} | {exit_status.get(x[3])}"
     return x[0]
 
+def create_summary(download_events):
+    summary_table = {"Time":[], "Program":[]}
+    pattern = r" ([a-zA-Z+_0-9 ]*) -"
+    
+    for i in range(len(download_events["TimeCreated"])) :
+        if download_events['EventID'][i] == "11707" : 
+            x = re.findall(pattern, download_events['Data'][i])
+            if x[0].strip() not in summary_table["Program"] :
+                summary_table["Time"].append(download_events['TimeCreated'][i])
+                summary_table["Program"].append(x[0].strip())
+    return summary_table
+
 def main() :
     args = parse_arguments()
     evtx_event_list = extract_evtx_from_file_as_xml(args.file)
-    results = parse_evtx_list(evtx_event_list)
+    download_events = parse_evtx_list(evtx_event_list)
+    summary_table = create_summary(download_events)
+    if args.verbose : 
+        print(tabulate(download_events, headers="keys"), "\n ")
+    print(" === SUMMARY ===\n\n", tabulate(summary_table, headers="keys"), "\n")
     
-    print(tabulate(results, headers="keys"))
 
 if __name__ == "__main__":
     main()
