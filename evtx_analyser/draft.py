@@ -1,10 +1,12 @@
+import html
+import argparse
+import re
+
 from Evtx.Evtx import Evtx
 from enum import Enum
 import xml.etree.ElementTree as ET
 from tabulate import tabulate
-import html
-import argparse
-import re
+
 
 # TO DO : test on a dataset that includes event ID 11708
 
@@ -12,6 +14,7 @@ ns = {'e': 'http://schemas.microsoft.com/win/2004/08/events/event'}
 
 class event_ids(Enum):
     msi_installer_install_event_ids = ['1033', '11707', '11708'] # Principaux Event IDs MSI
+
 
 language_mapping = {
     "1033" : "English - United States"
