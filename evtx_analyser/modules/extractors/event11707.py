@@ -17,4 +17,5 @@ class Event11707Module(EventModule):
         cleaned_data = re.sub(r'<string>\(NULL\)</string>', '', raw_event_datas[0][0].text) 
         cleaned_data = re.sub(r'\s+', ' ', cleaned_data).strip()
         cleaned_data = re.sub(r'<string></string>', '', cleaned_data)  
-        return  re.findall(r'<string>(.*?)<\/string>', cleaned_data)[0]
+        cleaned_data = re.findall(r'<string>(.*?)<\/string>', cleaned_data)[0]
+        return  f"""Program "{re.findall(r" ([a-zA-Z+_0-9 ]*) -", cleaned_data)[0]}" installed""", cleaned_data

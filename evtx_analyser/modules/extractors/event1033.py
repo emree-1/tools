@@ -21,4 +21,4 @@ class Event1033Module(EventModule):
         cleaned_data = re.sub(r'<string>\(NULL\)</string>|<string></string>', '', raw_event_datas[0][0].text)
         cleaned_data = re.sub(r'\s+', ' ', cleaned_data).strip()
         elements = re.findall(r'<string>(.*?)</string>', cleaned_data)
-        return f"{elements[0]} ({elements[1]}) | {elements[4]} | {language_mapping.get(elements[2], 'Unknown')} | {exit_status.get(elements[3], 'Unknown')}"
+        return f"{elements[0]} ({elements[1]}) | {elements[4]} | {language_mapping.get(elements[2], 'Unknown')} | {exit_status.get(elements[3], 'Unknown')}", elements

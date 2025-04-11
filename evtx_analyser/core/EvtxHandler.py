@@ -15,7 +15,8 @@ class EvtxHandler:
             "Provider": [],
             "Channel": [],
             "Computer": [],
-            "Data": []
+            "EventData": [],
+            "Raw_EventData": []
         }
         
     def read_and_parse_evtx(self):
@@ -61,10 +62,11 @@ class EvtxHandler:
             extractor_module = self.modules.get(self.evtx_events["EventID"][i], None)
             if extractor_module is None:
                 # Add a logging message here to indicate that no module was found for the event ID
-                self.evtx_events["Data"].append("")
+                self.evtx_events["EventData"].append("")
                 continue
-            event_data = extractor_module.parse_event_data(evtx_event)
-            self.evtx_events["Data"].append(event_data)
+            event_data, raw_event_data = extractor_module.parse_event_data(evtx_event)
+            self.evtx_events["EventData"].append(event_data)
+            self.evtx_events["Raw_EventData"].append(raw_event_data)
             
         return self.evtx_events
 
