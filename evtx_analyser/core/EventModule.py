@@ -34,11 +34,12 @@ class EventModule(ABC):
         return raw_event_datas
 
     def parse_event_data(self, evtx_event) :
+        # print(evtx_event)
         root = ET.fromstring(evtx_event)
         raw_event_datas = []
         
         for xpath in self.xpaths:
-            element = root.find(xpath, self.ns)
-            raw_event_datas.append(element.text)
-            
+            elements = root.findall(xpath, self.ns)
+            raw_event_datas.append(elements)
+
         return self.clean_event_data(raw_event_datas)

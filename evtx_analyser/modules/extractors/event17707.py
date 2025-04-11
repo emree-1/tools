@@ -14,7 +14,7 @@ class Event11707Module(EventModule):
         ]
     
     def clean_event_data(self, raw_event_datas) -> str:    
-        cleaned_data = re.sub(r'<string>\(NULL\)</string>', '', raw_event_datas[0]) 
+        cleaned_data = re.sub(r'<string>\(NULL\)</string>', '', raw_event_datas[0][0].text) 
         cleaned_data = re.sub(r'\s+', ' ', cleaned_data).strip()
         cleaned_data = re.sub(r'<string></string>', '', cleaned_data)  
         return  re.findall(r'<string>(.*?)<\/string>', cleaned_data)[0]
